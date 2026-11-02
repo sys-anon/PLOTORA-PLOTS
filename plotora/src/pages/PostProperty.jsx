@@ -1,89 +1,150 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, MapPin, Home, Building2, Store, Key, Building, CheckCircle, Loader2, X, Image } from 'lucide-react';
-import { addProperty, uploadImages } from '../firebase/propertyService';
+import {
+  MapPin, Home, Building2, Store, Key, Building,
+  CheckCircle, Loader2, X, ImagePlus, Upload,
+} from 'lucide-react';
+import { addProperty } from '../firebase/propertyService';
 import { locations } from '../data/properties';
 
+// ── Cloudinary config ──────────────────────────────────────
+const CLOUD_NAME    = 'j5x1rubu';
+const UPLOAD_PRESET = 'plotora_upload';
+
 const propertyTypes = [
-  { id: 'Houses for Sale',      label: 'House for Sale',      icon: Home     },
-  { id: 'Land & Plots',         label: 'Land & Plot',         icon: MapPin   },
-  { id: 'Buildings for Sale',   label: 'Building for Sale',   icon: Building2},
-  { id: 'Shops & Commercial',   label: 'Shop / Commercial',   icon: Store    },
-  { id: 'Homes for Rent',       label: 'Home for Rent',       icon: Key      },
-  { id: 'Buildings for Rent',   label: 'Building for Rent',   icon: Building },
+  { id: 'Houses for Sale',    label: 'House for Sale',    icon: Home      },
+  { id: 'Land & Plots',       label: 'Land & Plot',       icon: MapPin    },
+  { id: 'Buildings for Sale', label: 'Building for Sale', icon: Building2 },
+  { id: 'Shops & Commercial', label: 'Shop / Commercial', icon: Store     },
+  { id: 'Homes for Rent',     label: 'Home for Rent',     icon: Key       },
+  { id: 'Buildings for Rent', label: 'Building for Rent', icon: Building  },
 ];
 
 const amenitiesOptions = [
   'Swimming Pool','Parking','Garden','Gym','Power Backup',
   'Security','Lift/Elevator','Balcony','Modular Kitchen',
   'CCTV','Solar Panels','Water Purifier','Children Play Area',
-  'Road Access','Clear Title',
+  'Road Access','Clear Title','24/7 Water Supply',
 ];
+
+// Upload a single file to Cloudinary, returns the secure URL
+async function uploadToCloudinary(file, onProgress) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', UPLOAD_PRESET);
+  formData.append('folder', 'plotora');
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        resolve(data.secure_url);
+      } else {
+        reject(new Error('Upload failed. Check Cloudinary preset settings.'));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Network error during upload.'));
+    xhr.send(formData);
+  });
+}
 
 export default function PostProperty() {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
-    type: '', category: 'sale', title: '', location: '', price: '',
+    type: '', title: '', location: '', price: '',
     area: '', bedrooms: '', bathrooms: '', parking: '',
-    description: '', amenities: [],
+    description: '', amenities: [], tag: '',
     agentName: '', agentPhone: '', agentEmail: '',
-    tag: '',
   });
-  const [files, setFiles] = useState([]);        // File objects
-  const [previews, setPreviews] = useState([]);  // Preview URLs
-  const [uploadProgress, setUploadProgress] = useState([]);
+
+  // Image state
+  const [selectedFiles, setSelectedFiles]   = useState([]); // File objects
+  const [previewUrls, setPreviewUrls]       = useState([]); // Local blob previews
+  const [uploadedUrls, setUploadedUrls]     = useState([]); // Cloudinary URLs
+  const [uploadProgress, setUploadProgress] = useState({}); // { index: 0-100 }
+  const [uploading, setUploading]           = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState('');
+  const [submitted, setSubmitted]   = useState(false);
+  const [error, setError]           = useState('');
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const toggleAmenity = (a) => {
+  const toggleAmenity = (a) =>
     setForm((prev) => ({
       ...prev,
       amenities: prev.amenities.includes(a)
         ? prev.amenities.filter((x) => x !== a)
         : [...prev.amenities, a],
     }));
-  };
 
-  const handleFiles = (e) => {
-    const selected = Array.from(e.target.files).slice(0, 6); // max 6 images
-    setFiles(selected);
-    setPreviews(selected.map((f) => URL.createObjectURL(f)));
-    setUploadProgress(selected.map(() => 0));
+  // ── Handle file selection ────────────────────────────────
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files).slice(0, 6 - selectedFiles.length);
+    if (files.length === 0) return;
+
+    const newFiles    = [...selectedFiles, ...files].slice(0, 6);
+    const newPreviews = newFiles.map((f) => URL.createObjectURL(f));
+
+    setSelectedFiles(newFiles);
+    setPreviewUrls(newPreviews);
+    setUploadedUrls([]); // reset uploaded URLs so they re-upload on submit
   };
 
   const removeImage = (i) => {
-    setFiles((prev) => prev.filter((_, idx) => idx !== i));
-    setPreviews((prev) => prev.filter((_, idx) => idx !== i));
-    setUploadProgress((prev) => prev.filter((_, idx) => idx !== i));
+    const newFiles    = selectedFiles.filter((_, idx) => idx !== i);
+    const newPreviews = previewUrls.filter((_, idx) => idx !== i);
+    const newUploaded = uploadedUrls.filter((_, idx) => idx !== i);
+    setSelectedFiles(newFiles);
+    setPreviewUrls(newPreviews);
+    setUploadedUrls(newUploaded);
   };
 
+  // ── Upload all images to Cloudinary ─────────────────────
+  const uploadAllImages = async () => {
+    if (selectedFiles.length === 0) return [];
+    setUploading(true);
+    const urls = [];
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const url = await uploadToCloudinary(selectedFiles[i], (pct) => {
+        setUploadProgress((prev) => ({ ...prev, [i]: pct }));
+      });
+      urls.push(url);
+    }
+    setUploading(false);
+    setUploadedUrls(urls);
+    return urls;
+  };
+
+  // ── Submit ───────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setError('');
-    try {
-      let imageUrls = [];
 
-      // Upload images if any
-      if (files.length > 0) {
-        imageUrls = await uploadImages(files, (fileIdx, pct) => {
-          setUploadProgress((prev) => {
-            const next = [...prev];
-            next[fileIdx] = pct;
-            return next;
-          });
-        });
+    try {
+      // Upload images first
+      let imageUrls = uploadedUrls;
+      if (selectedFiles.length > 0 && uploadedUrls.length === 0) {
+        imageUrls = await uploadAllImages();
       }
 
-      // Determine category from type
-      const isRent = form.type.toLowerCase().includes('rent');
+      const isRent   = form.type.toLowerCase().includes('rent');
       const category = isRent ? 'rent' : 'sale';
 
-      // Save to Firestore
       await addProperty({
         type:        form.type,
         category,
@@ -91,9 +152,9 @@ export default function PostProperty() {
         location:    form.location,
         price:       Number(form.price),
         area:        Number(form.area),
-        bedrooms:    form.bedrooms ? Number(form.bedrooms) : null,
+        bedrooms:    form.bedrooms  ? Number(form.bedrooms)  : null,
         bathrooms:   form.bathrooms ? Number(form.bathrooms) : null,
-        parking:     form.parking  ? Number(form.parking)  : null,
+        parking:     form.parking   ? Number(form.parking)   : null,
         description: form.description,
         amenities:   form.amenities,
         tag:         form.tag || null,
@@ -108,31 +169,31 @@ export default function PostProperty() {
         postedDate: 'Just now',
         featured:   false,
         verified:   false,
-        status:     'pending',   // admin must approve
+        status:     'pending',
       });
 
       setSubmitted(true);
     } catch (err) {
       console.error(err);
-      setError('Something went wrong. Please check your Firebase config and try again.');
+      if (err.code === 'permission-denied') {
+        setError('❌ Firestore permission denied. Enable Firestore in Firebase Console → Test mode.');
+      } else {
+        setError(`❌ ${err.message || 'Something went wrong. Please try again.'}`);
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ─── Success Screen ────────────────────────────────────────
+  // ── Success screen ───────────────────────────────────────
   if (submitted) {
     return (
       <div className="min-h-screen pt-20 flex items-center justify-center bg-gray-50">
         <div className="card p-12 text-center max-w-md mx-auto">
           <CheckCircle size={64} className="text-primary-700 mx-auto mb-4" />
           <h2 className="text-2xl font-black text-gray-900 mb-2">Property Submitted! 🎉</h2>
-          <p className="text-gray-500 mb-2">
-            Your listing has been sent for review.
-          </p>
-          <p className="text-sm text-gray-400 mb-6">
-            Our team will verify and publish it within 24 hours.
-          </p>
+          <p className="text-gray-500 mb-2">Your listing has been sent for admin review.</p>
+          <p className="text-sm text-gray-400 mb-6">It will go live within 24 hours after approval.</p>
           <div className="flex gap-3 justify-center">
             <button onClick={() => navigate('/')} className="btn-outline text-sm">Go Home</button>
             <button onClick={() => navigate('/properties')} className="btn-primary text-sm">Browse Properties</button>
@@ -152,14 +213,14 @@ export default function PostProperty() {
         </div>
       </div>
 
-      {/* Steps */}
+      {/* Steps indicator */}
       <div className="bg-white border-b border-gray-100 shadow-sm sticky top-20 z-10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-2">
             {[
-              { n: 1, label: 'Property Type' },
+              { n: 1, label: 'Property Type'    },
               { n: 2, label: 'Details & Photos' },
-              { n: 3, label: 'Contact Info' },
+              { n: 3, label: 'Contact Info'     },
             ].map(({ n, label }) => (
               <div key={n} className="flex items-center gap-2 flex-1">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
@@ -180,13 +241,14 @@ export default function PostProperty() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <form onSubmit={handleSubmit}>
 
-          {/* ── Step 1: Property Type ── */}
+          {/* ── STEP 1: Property Type ── */}
           {step === 1 && (
             <div className="card p-8">
               <h2 className="text-xl font-bold text-gray-900 mb-6">What type of property are you listing?</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
                 {propertyTypes.map(({ id, label, icon: Icon }) => (
-                  <button key={id} type="button" onClick={() => setForm({ ...form, type: id })}
+                  <button key={id} type="button"
+                    onClick={() => setForm({ ...form, type: id })}
                     className={`p-5 border-2 rounded-2xl text-center transition-all ${
                       form.type === id
                         ? 'border-primary-700 bg-primary-50 text-primary-700'
@@ -208,11 +270,12 @@ export default function PostProperty() {
             </div>
           )}
 
-          {/* ── Step 2: Details & Photos ── */}
+          {/* ── STEP 2: Details & Photos ── */}
           {step === 2 && (
             <div className="card p-8 space-y-5">
               <h2 className="text-xl font-bold text-gray-900">Property Details</h2>
 
+              {/* Title */}
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Property Title *</label>
                 <input name="title" value={form.title} onChange={handleChange} required
@@ -220,6 +283,7 @@ export default function PostProperty() {
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-500" />
               </div>
 
+              {/* Location + Price */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Location *</label>
@@ -258,7 +322,7 @@ export default function PostProperty() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Parking Spaces</label>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Parking</label>
                   <select name="parking" value={form.parking} onChange={handleChange}
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-500 bg-white">
                     <option value="">N/A</option>
@@ -267,10 +331,11 @@ export default function PostProperty() {
                 </div>
               </div>
 
+              {/* Description */}
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Description *</label>
                 <textarea name="description" value={form.description} onChange={handleChange} required
-                  placeholder="Describe your property in detail — location benefits, nearby amenities, unique features..."
+                  placeholder="Describe your property — location benefits, nearby amenities, unique features..."
                   rows={4}
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-500 resize-none" />
               </div>
@@ -306,37 +371,82 @@ export default function PostProperty() {
                 </select>
               </div>
 
-              {/* Photo Upload */}
+              {/* ── Photo Upload (Cloudinary) ── */}
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">
-                  Property Photos (up to 6) — Saved to Firebase Storage
-                </label>
-                <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-8 hover:border-primary-300 transition-colors cursor-pointer bg-gray-50">
-                  <Upload size={32} className="text-gray-300 mb-2" />
-                  <p className="text-gray-500 text-sm text-center">
-                    Click to upload photos<br/>
-                    <span className="text-xs text-gray-400">JPG, PNG up to 10MB each</span>
-                  </p>
-                  <input type="file" accept="image/*" multiple onChange={handleFiles} className="hidden" />
+                  Property Photos (up to 6)
                 </label>
 
+                {/* Upload area */}
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-all"
+                >
+                  <ImagePlus size={32} className="text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-gray-700">Click to select photos</p>
+                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP — up to 6 photos</p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                </div>
+
                 {/* Previews */}
-                {previews.length > 0 && (
-                  <div className="flex gap-2 mt-3 flex-wrap">
-                    {previews.map((url, i) => (
-                      <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+                {previewUrls.length > 0 && (
+                  <div className="grid grid-cols-3 gap-3 mt-4">
+                    {previewUrls.map((url, i) => (
+                      <div key={i} className="relative rounded-xl overflow-hidden aspect-video bg-gray-100">
                         <img src={url} alt="" className="w-full h-full object-cover" />
-                        {uploadProgress[i] > 0 && uploadProgress[i] < 100 && (
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+
+                        {/* Upload progress overlay */}
+                        {uploading && uploadProgress[i] !== undefined && uploadProgress[i] < 100 && (
+                          <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
+                            <div className="w-3/4 bg-white/30 rounded-full h-1.5 mb-1">
+                              <div
+                                className="bg-white h-1.5 rounded-full transition-all"
+                                style={{ width: `${uploadProgress[i]}%` }}
+                              />
+                            </div>
                             <span className="text-white text-xs font-bold">{uploadProgress[i]}%</span>
                           </div>
                         )}
-                        <button type="button" onClick={() => removeImage(i)}
-                          className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                          <X size={10} className="text-white" />
-                        </button>
+
+                        {/* Uploaded checkmark */}
+                        {uploadedUrls[i] && (
+                          <div className="absolute top-1 left-1 bg-green-500 rounded-full p-0.5">
+                            <CheckCircle size={14} className="text-white" />
+                          </div>
+                        )}
+
+                        {/* Remove button */}
+                        {!uploading && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeImage(i); }}
+                            className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600"
+                          >
+                            <X size={12} className="text-white" />
+                          </button>
+                        )}
                       </div>
                     ))}
+
+                    {/* Add more button */}
+                    {previewUrls.length < 6 && (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="aspect-video border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center cursor-pointer hover:border-primary-400 transition-colors"
+                      >
+                        <div className="text-center">
+                          <ImagePlus size={20} className="text-gray-400 mx-auto mb-1" />
+                          <span className="text-xs text-gray-400">Add more</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -346,7 +456,8 @@ export default function PostProperty() {
                   className="px-6 py-3 border-2 border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 text-sm">
                   ← Back
                 </button>
-                <button type="button" disabled={!form.title || !form.location || !form.price || !form.area}
+                <button type="button"
+                  disabled={!form.title || !form.location || !form.price || !form.area}
                   onClick={() => setStep(3)}
                   className="flex-1 py-3 bg-primary-700 text-white font-bold rounded-xl hover:bg-primary-800 transition-colors text-sm disabled:opacity-40">
                   Continue →
@@ -355,7 +466,7 @@ export default function PostProperty() {
             </div>
           )}
 
-          {/* ── Step 3: Contact ── */}
+          {/* ── STEP 3: Contact ── */}
           {step === 3 && (
             <div className="card p-8 space-y-5">
               <h2 className="text-xl font-bold text-gray-900">Your Contact Details</h2>
@@ -387,12 +498,13 @@ export default function PostProperty() {
                 <p className="text-gray-600"><strong>Title:</strong> {form.title}</p>
                 <p className="text-gray-600"><strong>Location:</strong> {form.location}</p>
                 <p className="text-gray-600"><strong>Price:</strong> ₹{Number(form.price || 0).toLocaleString()}</p>
-                <p className="text-gray-600"><strong>Photos:</strong> {files.length} selected</p>
-                <p className="text-orange-600 text-xs mt-2">
-                  ⚠️ Your listing will be reviewed by admin before going live.
+                <p className="text-gray-600"><strong>Photos:</strong> {selectedFiles.length} selected</p>
+                <p className="text-orange-600 text-xs mt-2 font-medium">
+                  ⚠️ Listing will be reviewed by admin before going live.
                 </p>
               </div>
 
+              {/* Error */}
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
                   {error}
@@ -404,13 +516,20 @@ export default function PostProperty() {
                   className="px-6 py-3 border-2 border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 text-sm">
                   ← Back
                 </button>
-                <button type="submit" disabled={!form.agentName || !form.agentPhone || submitting}
+                <button type="submit"
+                  disabled={!form.agentName || !form.agentPhone || submitting || uploading}
                   className="flex-1 py-3 bg-primary-700 text-white font-bold rounded-xl hover:bg-primary-800 transition-colors text-sm disabled:opacity-70 flex items-center justify-center gap-2">
-                  {submitting ? <><Loader2 size={16} className="animate-spin" /> Uploading & Saving...</> : '🎉 Submit Property Free'}
+                  {uploading
+                    ? <><Loader2 size={16} className="animate-spin" /> Uploading Photos...</>
+                    : submitting
+                    ? <><Loader2 size={16} className="animate-spin" /> Saving...</>
+                    : <><Upload size={16} /> Submit Property Free</>
+                  }
                 </button>
               </div>
             </div>
           )}
+
         </form>
       </div>
     </div>

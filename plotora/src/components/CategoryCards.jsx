@@ -1,11 +1,28 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, MapPin, Building2, Store, Key, Building, ArrowRight } from 'lucide-react';
 import { categories } from '../data/properties';
+import { getAllProperties } from '../firebase/propertyService';
 
 const iconMap = { Home, MapPin, Building2, Store, Key, Building };
 
 export default function CategoryCards() {
   const navigate = useNavigate();
+  const [counts, setCounts] = useState({});
+
+  // Fetch live counts from Firestore
+  useEffect(() => {
+    getAllProperties('approved')
+      .then((props) => {
+        const c = {};
+        props.forEach((p) => {
+          const key = p.type;
+          c[key] = (c[key] || 0) + 1;
+        });
+        setCounts(c);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleCategory = (cat) => {
     const params = new URLSearchParams();
@@ -32,6 +49,7 @@ export default function CategoryCards() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {categories.map((cat) => {
             const Icon = iconMap[cat.icon];
+            const liveCount = counts[cat.filter.type] ?? 0;
             return (
               <button
                 key={cat.id}
@@ -46,9 +64,9 @@ export default function CategoryCards() {
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0d2b1d]/80 via-[#0d2b1d]/20 to-transparent" />
-                  {/* Count badge */}
+                  {/* Live count badge */}
                   <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm text-primary-700 text-xs font-bold px-2 py-0.5 rounded-full">
-                    {cat.count}
+                    {liveCount}
                   </div>
                 </div>
 
@@ -61,7 +79,7 @@ export default function CategoryCards() {
                     <ArrowRight size={14} className="text-gray-400 group-hover:text-primary-700 group-hover:translate-x-1 transition-all ml-auto" />
                   </div>
                   <p className="text-xs font-bold text-gray-800 leading-tight">{cat.label}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{cat.count} listings</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{liveCount} listings</p>
                 </div>
               </button>
             );
@@ -81,4 +99,3 @@ export default function CategoryCards() {
     </section>
   );
 }
-

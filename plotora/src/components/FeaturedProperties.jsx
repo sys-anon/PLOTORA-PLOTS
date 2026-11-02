@@ -12,14 +12,26 @@ const tagColors = {
   Premium: 'bg-purple-600 text-white',
 };
 
-export function PropertyCard({ property, saved = false, onSave }) {
+// localStorage helpers
+function getSavedIds() {
+  return JSON.parse(localStorage.getItem('plotora_saved') || '[]');
+}
+function toggleSavedId(id) {
+  const ids = getSavedIds();
+  const updated = ids.includes(id) ? ids.filter((i) => i !== id) : [...ids, id];
+  localStorage.setItem('plotora_saved', JSON.stringify(updated));
+  return updated.includes(id);
+}
+
+export function PropertyCard({ property, onSave }) {
   const navigate = useNavigate();
-  const [isSaved, setIsSaved] = useState(saved);
+  const [isSaved, setIsSaved] = useState(() => getSavedIds().includes(property.id));
 
   const handleSave = (e) => {
     e.stopPropagation();
-    setIsSaved(!isSaved);
-    onSave && onSave(property.id, !isSaved);
+    const nowSaved = toggleSavedId(property.id);
+    setIsSaved(nowSaved);
+    onSave && onSave(property.id, nowSaved);
   };
 
   const img = property.image || (property.images && property.images[0]) || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80';

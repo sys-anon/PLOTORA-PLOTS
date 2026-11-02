@@ -69,16 +69,29 @@ export default function Hero() {
             Find the perfect place with Plotora.
           </p>
 
-          {/* Quick pills */}
+          {/* Quick pills — clickable */}
           <div className="flex gap-3 mb-6 flex-wrap">
-            {['Buy', 'Sell', 'Rent'].map((t) => (
-              <span
-                key={t}
-                className="px-4 py-1.5 rounded-full text-sm font-bold border border-white/40 text-white bg-white/10 backdrop-blur-sm"
-              >
-                {t}
-              </span>
-            ))}
+            <button
+              type="button"
+              onClick={() => navigate('/properties?category=sale')}
+              className="px-4 py-1.5 rounded-full text-sm font-bold border border-white/40 text-white bg-white/10 backdrop-blur-sm hover:bg-white/25 hover:border-white transition-all"
+            >
+              Buy
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/post-property')}
+              className="px-4 py-1.5 rounded-full text-sm font-bold border border-white/40 text-white bg-white/10 backdrop-blur-sm hover:bg-white/25 hover:border-white transition-all"
+            >
+              Sell
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/properties?category=rent')}
+              className="px-4 py-1.5 rounded-full text-sm font-bold border border-white/40 text-white bg-white/10 backdrop-blur-sm hover:bg-white/25 hover:border-white transition-all"
+            >
+              Rent
+            </button>
           </div>
 
           {/* Search Box */}
