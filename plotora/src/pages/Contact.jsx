@@ -3,8 +3,8 @@ import { Phone, Mail, MapPin, Clock, Send, CheckCircle } from 'lucide-react';
 
 const contactInfo = [
   { icon: MapPin, label: 'Address', value: '123 MG Road, Kozhikode, Kerala – 673001, India' },
-  { icon: Phone, label: 'Phone', value: '+91 8943746079', href: 'tel:+919876543210' },
-  { icon: Mail, label: 'Email', value: 'hello@plotora.com', href: 'mailto:hello@plotora.com' },
+  { icon: Phone, label: 'Phone', value: '+91 8943746079', href: 'tel:+918943746079' },
+  { icon: Mail, label: 'Email', value: 'ajayrajurajcp@gmail.com', href: 'mailto:ajayrajurajcp@gmail.com' },
   { icon: Clock, label: 'Working Hours', value: 'Mon – Sat: 9:00 AM – 7:00 PM' },
 ];
 
@@ -149,8 +149,6 @@ export default function Contact() {
                         <option value="">Select a subject...</option>
                         <option>I want to Buy a Property</option>
                         <option>I want to Sell my Property</option>
-                        <option>I want to Rent a Property</option>
-                        <option>I want to List my Property for Rent</option>
                         <option>General Inquiry</option>
                         <option>Other</option>
                       </select>

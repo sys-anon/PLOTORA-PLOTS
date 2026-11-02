@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   Phone, Mail, MapPin, Facebook, Twitter, Instagram, Youtube,
-  Home, Building2, Key, Store, ArrowRight
+  Home, Building2, Store, ArrowRight
 } from 'lucide-react';
 
 const Logo = () => (
@@ -38,7 +38,7 @@ export default function Footer() {
           </div>
           <div className="flex gap-3 flex-shrink-0">
             <Link
-              to="/properties"
+              to="/browse"
               className="px-6 py-3 bg-white text-primary-700 font-bold rounded-full hover:bg-gray-100 transition-colors text-sm"
             >
               Browse Properties
@@ -88,7 +88,7 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {[
                 { label: 'Home', to: '/' },
-                { label: 'Browse Properties', to: '/properties' },
+                { label: 'Browse Properties', to: '/browse' },
                 { label: 'Sell Property', to: '/sell' },
                 { label: 'About Us', to: '/about' },
                 { label: 'Contact Us', to: '/contact' },
@@ -112,12 +112,10 @@ export default function Footer() {
             <h4 className="text-white font-bold mb-5 text-sm uppercase tracking-wider">Property Types</h4>
             <ul className="space-y-2.5">
               {[
-                { label: 'Houses for Sale', icon: Home, to: '/properties?type=houses-sale' },
-                { label: 'Land & Plots', icon: MapPin, to: '/properties?type=land-plots' },
-                { label: 'Buildings for Sale', icon: Building2, to: '/properties?type=buildings-sale' },
-                { label: 'Shops & Commercial', icon: Store, to: '/properties?type=shops-commercial' },
-                { label: 'Homes for Rent', icon: Key, to: '/properties?type=homes-rent' },
-                { label: 'Buildings for Rent', icon: Building2, to: '/properties?type=buildings-rent' },
+                { label: 'Houses for Sale',    icon: Home,      to: '/properties?type=houses-sale'     },
+                { label: 'Land & Plots',       icon: MapPin,    to: '/properties?type=land-plots'      },
+                { label: 'Buildings for Sale', icon: Building2, to: '/properties?type=buildings-sale'  },
+                { label: 'Shops & Commercial', icon: Store,     to: '/properties?type=shops-commercial'},
               ].map(({ label, icon: Icon, to }) => (
                 <li key={label}>
                   <Link
@@ -148,16 +146,16 @@ export default function Footer() {
                 <div className="w-8 h-8 bg-primary-900 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Phone size={15} className="text-[#22c55e]" />
                 </div>
-                <a href="tel:+919876543210" className="text-gray-400 hover:text-[#22c55e] text-sm transition-colors">
-                  +91 98765 43210
+                <a href="tel:+918943746079" className="text-gray-400 hover:text-[#22c55e] text-sm transition-colors">
+                  +91 8943746079
                 </a>
               </li>
               <li className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-primary-900 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Mail size={15} className="text-[#22c55e]" />
                 </div>
-                <a href="mailto:hello@plotora.com" className="text-gray-400 hover:text-[#22c55e] text-sm transition-colors">
-                  hello@plotora.com
+                <a href="mailto:ajayrajurajcp@gmail.com" className="text-gray-400 hover:text-[#22c55e] text-sm transition-colors">
+                  ajayrajurajcp@gmail.com
                 </a>
               </li>
             </ul>

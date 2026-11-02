@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  MapPin, Home, Building2, Store, Key, Building,
+  MapPin, Home, Building2, Store,
   CheckCircle, Loader2, X, ImagePlus, Upload,
 } from 'lucide-react';
 import { addProperty } from '../firebase/propertyService';
@@ -16,8 +16,6 @@ const propertyTypes = [
   { id: 'Land & Plots',       label: 'Land & Plot',       icon: MapPin    },
   { id: 'Buildings for Sale', label: 'Building for Sale', icon: Building2 },
   { id: 'Shops & Commercial', label: 'Shop / Commercial', icon: Store     },
-  { id: 'Homes for Rent',     label: 'Home for Rent',     icon: Key       },
-  { id: 'Buildings for Rent', label: 'Building for Rent', icon: Building  },
 ];
 
 const amenitiesOptions = [

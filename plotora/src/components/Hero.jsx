@@ -12,8 +12,6 @@ const propertyTypes = [
   'Land & Plots',
   'Buildings for Sale',
   'Shops & Commercial',
-  'Homes for Rent',
-  'Buildings for Rent',
 ];
 
 export default function Hero() {
@@ -30,7 +28,7 @@ export default function Hero() {
     if (query) params.set('q', query);
     if (location) params.set('location', location);
     if (propType !== 'All Properties') params.set('type', propType);
-    navigate(`/properties?${params.toString()}`);
+    navigate(`/browse?${params.toString()}`);
   };
 
   return (
@@ -73,7 +71,7 @@ export default function Hero() {
           <div className="flex gap-3 mb-6 flex-wrap">
             <button
               type="button"
-              onClick={() => navigate('/properties?category=sale')}
+              onClick={() => navigate('/browse')}
               className="px-4 py-1.5 rounded-full text-sm font-bold border border-white/40 text-white bg-white/10 backdrop-blur-sm hover:bg-white/25 hover:border-white transition-all"
             >
               Buy
@@ -84,13 +82,6 @@ export default function Hero() {
               className="px-4 py-1.5 rounded-full text-sm font-bold border border-white/40 text-white bg-white/10 backdrop-blur-sm hover:bg-white/25 hover:border-white transition-all"
             >
               Sell
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/properties?category=rent')}
-              className="px-4 py-1.5 rounded-full text-sm font-bold border border-white/40 text-white bg-white/10 backdrop-blur-sm hover:bg-white/25 hover:border-white transition-all"
-            >
-              Rent
             </button>
           </div>
 

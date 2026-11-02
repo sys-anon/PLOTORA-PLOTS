@@ -13,6 +13,7 @@ import PostProperty from './pages/PostProperty';
 import AdminPanel from './pages/AdminPanel';
 import LoginPage from './pages/LoginPage';
 import SavedProperties from './pages/SavedProperties';
+import BrowseProperties from './pages/BrowseProperties';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -48,6 +49,7 @@ function AppRoutes() {
             <Routes>
               <Route path="/"              element={<Home />} />
               <Route path="/properties"    element={<Properties />} />
+              <Route path="/browse"        element={<BrowseProperties />} />
               <Route path="/property/:id"  element={<PropertyDetail />} />
               <Route path="/about"         element={<About />} />
               <Route path="/contact"       element={<Contact />} />

@@ -38,22 +38,6 @@ export const categories = [
     count: 0,
     filter: { category: "sale", type: "Shops & Commercial" },
   },
-  {
-    id: "homes-rent",
-    label: "Homes for Rent",
-    icon: "Key",
-    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&q=80",
-    count: 0,
-    filter: { category: "rent", type: "Homes for Rent" },
-  },
-  {
-    id: "buildings-rent",
-    label: "Buildings for Rent",
-    icon: "Building",
-    image: "https://images.unsplash.com/photo-1565953522043-baea26b83b7e?w=400&q=80",
-    count: 0,
-    filter: { category: "rent", type: "Buildings for Rent" },
-  },
 ];
 
 export const locations = [

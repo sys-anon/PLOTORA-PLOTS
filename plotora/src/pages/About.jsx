@@ -1,5 +1,5 @@
 import { Target, Eye, Heart, Award, Users, Building2, MapPin } from 'lucide-react';
-import { agents, stats } from '../data/properties';
+import { stats } from '../data/properties';
 
 const iconMap = { Building2, Users, MapPin, Award };
 
@@ -133,34 +133,7 @@ export default function About() {
         </div>
       </section>
 
-      {/* Team */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <p className="text-primary-700 font-semibold text-sm uppercase tracking-widest mb-2">The Team</p>
-            <h2 className="section-title">Meet Our Expert Agents</h2>
-            <p className="section-subtitle">Dedicated professionals committed to your property journey</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {agents.map((agent) => (
-              <div key={agent.id} className="card p-6 text-center group hover:-translate-y-2 transition-all duration-300">
-                <div className="relative inline-block mb-4">
-                  <img
-                    src={agent.image}
-                    alt={agent.name}
-                    className="w-20 h-20 rounded-full object-cover border-4 border-primary-100 group-hover:border-primary-400 transition-colors"
-                  />
-                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white" />
-                </div>
-                <h3 className="font-bold text-gray-900">{agent.name}</h3>
-                <p className="text-primary-700 text-xs font-semibold mb-1">{agent.role}</p>
-                <p className="text-gray-400 text-xs mb-2">{agent.specialization}</p>
-                <p className="text-gray-500 text-xs">{agent.listings} listings • {agent.experience}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Team section removed */}
     </div>
   );
 }
